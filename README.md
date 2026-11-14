@@ -1,4 +1,4 @@
-# Juno PM
+# Juno PM by Sanjay Sinha
 
 > _(one-line pitch: what Juno does, for whom, in one sentence)_
 
