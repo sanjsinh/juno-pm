@@ -10,109 +10,99 @@ _The user problem and who has it._
 
 **User:** The Product Manager preparing the weekly product review. Executives are the audience for the summary, not the primary user of Juno.____
 
+
 ## The harness
 
 | Surface | Specification |
 |---|---|
-| 01 Context | _what Juno gets to see_ |
-| 02 Tools | _the verb list_ |
-| 03 Loop | _turn ceiling and escalation_ |
-| 04 Memory | _what persists, at what scope_ |
-| 05 Permissions | _read … · draft … · write … · send …_ |
-| 06 Verification | _the check before output ships_ |
+| 01 Context | Juno reads only the feedback batch and optional period or customer count provided by the PM. If feedback is missing, ask for it. |
+| 02 Tools | Juno can read and count comments, group them into candidate themes, draft the review, and check that themes have supporting comments. |
+| 03 Loop | Allow up to 3 turns per request. Stop and ask for PM review if input is missing, ambiguous, contradictory, or the draft can’t be grounded… |
+| 04 Memory | Keep the input and draft only for the current session; expire them when it ends. Don’t retain them across sessions. |
+| 05 Permissions | read auto · draft auto · write confirm · send blocked |
+| 06 Verification | Before presenting the draft, check comment counts, evidence for each theme, visibility of mixed or unclassified comments, and that no… |
 
 ## 01 Context · Data Requirements
 
-- **Required sources:** comments and optional period/customer count entered by the PM."_
-- **Deliberate exclusions:** :
+**Required sources, and exclusions**
 
-- Customer names, contact details, and other personal information. Juno only needs the feedback text.
-- Feedback or company information that the PM hasn’t provided or explicitly selected.
-- Product analytics, support tickets, sales notes, and other systems that aren’t part of the agreed input.
-- Assumptions about root causes, customer segments, or overall trends that the supplied feedback doesn’t support.
-- Roadmap plans or internal strategy documents unless they’re intentionally added as context for the review.
+Juno reads only the feedback batch and optional period or customer count provided by the PM. If feedback is missing, ask for it. Don’t infer customer count or pull in other sources
 
-This keeps the summary grounded in the feedback batch. If a relevant RocketShip document changes what Juno should see, add that source deliberately rather than making it available by default._
+**How fresh must it be**
 
-- **SLA of truth:**  3 months._
-- **When a source is unreachable:** _Ask PM to provide the source_
+Juno should use it **as of the time it’s submitted**. It shouldn’t claim the batch is current beyond that or refresh it automatically.
 
 ## 02 Tools · System Capabilities
 
-- **The verb list:** For Juno’s weekly feedback summary, list the **tools Juno needs**, the **systems it can access**, and the action type for each. Keep prototype capabilities separate from future integrations.
+**The verb list**
 
-### Tools and system capabilities
+Juno can read and count comments, group them into candidate themes, draft the review, and check that themes have supporting comments. It cannot search external systems, save the summary, or send it.
 
-| Capability | What it does | Side-effect class |
-|---|---|---|
-| Read supplied feedback | Accepts comments pasted by the PM, plus optional period and customer count | **Read** |
-| Count comments | Counts submitted comments; reports customer count only if supplied | **Read** |
-| Group feedback | Identifies candidate positive and negative themes and keeps unmatched comments visible | **Draft** |
-| Draft review summary | Produces positive feedback, negative feedback, key takeaway, and follow-up to consider, with supporting comments | **Draft** |
-| Check draft | Checks that counts match the input and each theme is supported by supplied comments | **Read** |
-| Copy summary | Copies the draft when the PM selects “Copy” | **Write** |
+**Deliberate omissions**
 
-**Systems:** In this prototype, the only input system is the Juno form; there are no connections to CRM, support, analytics, email, or other company systems.
-
-- **Deliberate omissions:** No web search, external data retrieval, editing source feedback, saving to a company system, or sending/publishing the summary. Those actions aren’t needed for the prototype and could introduce unsupported context or share an unreviewed draft._
+- **External web search:** Could add information unrelated to the supplied feedback and make the summary harder to verify.
+- **CRM, support, and analytics integrations:** They aren’t needed for the current prototype. Adding them would broaden access and require decisions about data quality, freshness, and permissions.
+- **Customer names and contact details:** They aren’t needed to summarize themes and could expose personal information.
+- **Saving summaries to company systems:** The PM should review the draft first; persistent writes add risk and aren’t needed for this flow.
+- **Sending or publishing summaries:** Juno shouldn’t distribute an unreviewed draft. The PM controls sharing.
+- **Product recommendations or root-cause claims:** The feedback sample alone may not support those conclusions. Juno can surface themes and follow-up questions, while the PM decides what to investigate or prioritize.
 
 ## 03 Loop · AI Costs & Latency
 
-- **Turn ceiling:** _5 turns per request._
-- **Escalation trigger:** Juno should stop and flag the draft for Product Manager review when it can’t produce a reliable, evidence-grounded summary—for example, when no feedback is provided, comments are ambiguous or contradictory, a theme has no clear supporting comments, or the reported counts don’t match the supplied input.
-Juno can still show a draft with the uncertainty clearly marked, but it should not present that draft as ready to share._
-- **Latency and cost target:** _For this first-pass product brief, set a **provisional target** of:
+**Turn ceiling and escalation**
 
-- **Latency:** Summary ready within **10 seconds** for up to 100 feedback comments.
-- **Cost:** Keep model and processing cost below **$0.10 per summary**._
+Allow up to 3 turns per request. Stop and ask for PM review if input is missing, ambiguous, contradictory, or the draft can’t be grounded in the feedback
+
+**Latency and cost target**
+
+Answers back in under 8 seconds almost every time, and cost per task should be $0.10
 
 ## 04 Memory · Data Requirements
-## Data requirements
 
-- **Required input:** Customer feedback supplied by the Product Manager. Each comment should remain identifiable within the batch so Juno can connect themes and counts back to evidence.
-- **Optional input:** Review period and customer count. If either is missing, Juno should say so rather than infer it.
-- **Source of truth:** The supplied feedback is authoritative for the summary. Juno should not silently add information from other systems.
-- **Freshness:** The summary reflects the batch provided at run time. There’s no automatic refresh in this prototype.
-- **Missing input:** If no feedback is supplied, Juno should ask for it and not generate a summary.
+**What persists, at what scope**
 
-## Memory requirements
+Keep the input and draft only for the current session; expire them when it ends. Don’t retain them across sessions.
 
-- Keep feedback and draft content **only for the current request/session**.
-- Don’t retain comments, customer details, or inferred themes across sessions.
-- Don’t write feedback or summaries to persistent storage. The PM’s source data and corrections take precedence over Juno’s interpretation.
-- **What persists, at what scope:** _**Nothing persists beyond the current request.** Juno uses the supplied comments, review period, and customer count only to create that session’s summary. It doesn’t retain them across sessions or at team scope._
-- **Expiry:** Feedback and draft summary expire when the session ends. Juno doesn’t retain them afterward.._
-- **Write rules:** Juno does not write feedback, themes, or summaries to persistent storage. It may copy the draft to the clipboard only when the Product Manager selects **Copy summary**. If the PM corrects a theme or count, their correction overrides Juno’s draft for the current session.._
+**Expiry and write rules**
+
+**Expiry:** Supplied feedback, draft summaries, and model-generated themes expire when the session ends. Nothing persists across sessions.
+
+**Correction precedence:** The PM’s explicit correction overrides Juno’s generated theme or summary for the current session. The original feedback remains the source record; if a correction conflicts with what the feedback says, Juno should flag the discrepancy for review rather than silently changing the source.
 
 ## 05 Permissions · AI Risks & Mitigations
 
-| Side-effect class | Tier | Scope |
-|---|---|---|
-| **Read** | Auto | Read only the feedback and optional context the Product Manager supplies for this request. |
-| **Draft** | Auto | Create a review summary, clearly labeled as a draft. |
-| **Write** | Confirm | Copy the summary only when the Product Manager selects **Copy summary**. Persistent writes are blocked. |
-| **Send** | Blocked | Juno cannot email, publish, or share the summary. |
+**The permission tier**
 
-**Justification:** Reading supplied feedback and drafting are reversible and stay within the current session. Copying requires a direct user action. Persistent writes and sending could expose customer information or distribute an unreviewed summary, so they’re blocked.
+| Side-effect class | Tier |
+|---|---|
+| read | auto |
+| draft | auto |
+| write | confirm |
+| send | blocked |
+
+**Justification**
+
+| Action | Blast radius | Can the PM undo it? |
+|---|---|---|
+| **Read supplied feedback** | Limited to the current request and the data the PM pasted. | Nothing changes, so no undo is needed. |
+| **Draft a summary** | Limited to the draft shown to the PM; it isn’t shared or saved automatically. | Yes. The PM can edit or discard it. |
+| **Copy summary** | The text enters the device clipboard and could be pasted elsewhere by the PM. | Usually: copying again replaces it. Juno can’t undo a paste into another app. |
+| **Send or publish** | Could reach recipients outside the PM’s control. | Not reliably; recipients may already have seen or copied it. Keep this blocked. |
 
 ## 06 Verification · AI Testing & Measurement
-**Check before the draft is ready:** Verify that:
 
-- The number of comments matches the supplied feedback; don’t treat comments as distinct customers.
-- Every theme is supported by one or more supplied comments.
-- Unclear, mixed, or uncategorized comments remain visible for review.
-- The summary doesn’t add unsupported causes, trends, customer details, or product recommendations.
-- The output includes the required sections: positive feedback, negative feedback, key takeaway, and follow-up to consider.
+**The check before output ships**
 
-**Failure behavior:** If a check fails, mark the draft **Needs review**, show what could not be verified, and ask the Product Manager to correct or review it. Don’t present it as ready to share.
+Before presenting the draft, check comment counts, evidence for each theme, visibility of mixed or unclassified comments, and that no unsupported causes or trends were added. If a check fails, mark it Needs review and explain why.
 
-- **The check before output ships:** _what is checked, against what bar._
-- **Failure behaviour:** _what happens when the check fails. Silently dropping the output is never the answer._
+**Failure behaviour**
+
+**Failure behavior:** If a verification check fails, Juno must not mark the summary ready to share or silently omit it. It should show a **Needs review** draft, identify which check failed, and point to the affected comments or count. If the input is missing or unusable, Juno should explain what’s needed and ask the PM to correct it before generating a summary. The PM can then revise the input or review the flagged draft.
 
 ## Eval plan
 
-_Stub. Module 5 fills this in: the human eval rubric in `05-evals/human-rubric.md`, with its pass bar._
+_Stub. Module 6 fills this in: golden set, pass thresholds, and regression cadence for the verification gate above._
 
 ## Out of scope
 
-_Any capability not in the verb list, and any action tiered `blocked`. Both are decisions on the record, not omissions._
+Any capability not in the verb list above, and any action tiered `blocked`. Both are decisions on the record, not omissions.
